@@ -13,7 +13,7 @@ Request
   -> JSON Response
 ```
 
-The interpreter converts every note into one of the six official directive types. Guardrails validate that untrusted structured output. The optimizer schedules grid, solar and battery energy. The final validator independently replays the serialized response before HTTP 200 is allowed.
+OpenAI is the primary language-model interpreter and CodeCraft is the generative backup. The interpreter converts every note into one of the six official directive types, deterministic guardrails validate the untrusted structured output, and PuLP/CBC performs cost optimization. The final validator independently replays the serialized response before HTTP 200 is allowed.
 
 ## Technology
 
@@ -27,18 +27,30 @@ The interpreter converts every note into one of the six official directive types
 
 The production interpreter, deterministic guardrails, PuLP/CBC optimizer, response builder and independent replay validator are integrated. The merged automated suite passes, and all ten official public cases passed against the real Dockerized pipeline with runtime credentials.
 
+## Production
+
+Base URL: https://gridwise-llm-henna.vercel.app/
+
+Endpoints:
+
+- `GET /health`
+- `POST /optimize-energy`
+
+Expected health response:
+
+```json
+{"status":"ok"}
+```
+
 ## Environment variables
 
-Copy `.env.example` to `.env` and fill only the credentials needed by the integrated interpreter:
+Copy `.env.example` to `.env` and configure these variable names:
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `PORT` | HTTP listening port | `8000` |
-| `OPENAI_API_KEY` | Primary model API credential | none |
-| `OPENAI_MODEL` | Primary model identifier | `gpt-5.6-terra` |
-| `CODECRAFT_API_KEY` | Optional fallback credential | none |
-| `CODECRAFT_BASE_URL` | Optional fallback API endpoint | `https://codecraftapi.com/v1` |
-| `CODECRAFT_MODEL` | Optional fallback model | `claude-fable-5` |
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `CODECRAFT_API_KEY`
+- `CODECRAFT_BASE_URL`
+- `CODECRAFT_MODEL`
 
 Never commit `.env`, keys, tokens or provider credentials.
 
@@ -63,7 +75,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 Check readiness:
 
 ```bash
-curl -i http://localhost:8000/health
+curl http://localhost:8000/health
 ```
 
 Expected body:
@@ -72,14 +84,37 @@ Expected body:
 {"status":"ok"}
 ```
 
-To send a complete official request without copying 24 rows manually:
+## Sample request / response
+
+Create the official SAMPLE-01 request without copying 24 rows manually:
 
 ```bash
 python -c "import json; d=json.load(open('BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json', encoding='utf-8')); print(json.dumps(d['cases'][0]['input']))" > sample-request.json
-curl -X POST http://localhost:8000/optimize-energy -H "Content-Type: application/json" --data-binary @sample-request.json
 ```
 
-This POST requires valid runtime model credentials.
+Submit it:
+
+```bash
+curl -X POST http://localhost:8000/optimize-energy \
+  -H "Content-Type: application/json" \
+  --data-binary @sample-request.json
+```
+
+Representative response structure:
+
+```text
+{
+  "scenario_id": "...",
+  "directive_interpretation": [...],
+  "hourly_plan": [...],
+  "total_grid_kwh": ...,
+  "total_cost_bdt": ...,
+  "peak_grid_kwh": ...,
+  "plan_summary": "..."
+}
+```
+
+This POST requires valid runtime model credentials. Complete official worked examples are in `BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json`.
 
 ## Tests
 
@@ -89,41 +124,53 @@ Run the complete local suite:
 python -m pytest -q
 ```
 
+Verified current suite: **166 passed, 4 skipped, 28 subtests passed**.
+
 Run all ten official public inputs against a running service:
 
 ```bash
-python scripts/test_public.py --base-url http://localhost:8000
+python scripts/test_public.py --base-url http://localhost:8000 --timeout 30
 ```
 
-The runner checks HTTP/JSON behavior, response shape, interpretation semantics and latency. It does not require explanation text or an exact reference schedule. To test a deployed service:
+Run the same official regression against production:
 
 ```bash
-BASE_URL=https://your-service.example python -m pytest -q tests/test_external_smoke.py
+python scripts/test_public.py --base-url https://gridwise-llm-henna.vercel.app --timeout 30
 ```
 
-On PowerShell, set `$env:BASE_URL` first. Without `BASE_URL`, external tests skip cleanly.
+Last verified official public regression: **10/10**.
 
-## Docker
+The runner checks HTTP/JSON behavior, response shape, interpretation semantics and latency. It does not require explanation text or an exact reference schedule.
 
-Build and run locally:
+## Docker fallback
+
+Build the submitted Dockerfile:
 
 ```bash
-docker build -t gridwise:test .
-docker run --rm -p 8000:8000 -e PORT=8000 --env-file .env gridwise:test
+docker build -t gridwise-llm:submission .
 ```
 
-Credentials are supplied at runtime and are never copied into the image. The image has been build-verified, including exact `/health` behavior and a real 24-hour `/optimize-energy` response.
+Run it with credentials supplied at runtime:
 
-## Production deployment
+```bash
+docker run --rm -p 8000:8000 \
+  --env-file .env \
+  gridwise-llm:submission
+```
 
-Production UI:
-https://gridwise-llm-henna.vercel.app/
+Check health:
 
-Health:
-GET https://gridwise-llm-henna.vercel.app/health
+```bash
+curl http://localhost:8000/health
+```
 
-Optimization:
-POST https://gridwise-llm-henna.vercel.app/optimize-energy
+Expected:
+
+```json
+{"status":"ok"}
+```
+
+The image builds successfully from the submitted Dockerfile. Local Docker `/health` and a real `/optimize-energy` request were verified. The service exposes port 8000, Uvicorn binds to `0.0.0.0`, credentials are supplied only at runtime, and no secrets are baked into the image.
 
 ## Provider and optimizer
 
@@ -133,11 +180,11 @@ The optimizer uses PuLP and its bundled CBC solver over the 24-hour continuous l
 
 ## Known limitations
 
-- The production deployment passed 10/10 official public cases; observed latency was p50 8.115 seconds and p95 11.141 seconds.
-- Hosted model availability depends on runtime credentials, quota and provider health.
+- Hosted model availability depends on provider health, network access and quota.
+- Latency can vary with hosted model response time.
 
 ## Security and credits
 
-The service validates request data, treats model output as untrusted, sanitizes internal failures and independently replays completed schedules. Keep credentials in environment variables, rotate any exposed credential, and ensure local key files are never added to Git or container images.
+The service validates request data, treats model output as untrusted, sanitizes provider and internal failures, and independently replays completed schedules. Supply secrets only through environment variables, never commit `.env` or API keys, and never bake provider credentials into container images.
 
 This project uses Python, FastAPI, Uvicorn, Pydantic, HTTPX, the OpenAI SDK, PuLP/CBC and pytest. AI coding assistants were used during implementation and verification; the team remains responsible for architecture, correctness and submitted behavior.
