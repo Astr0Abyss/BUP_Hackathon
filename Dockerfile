@@ -10,6 +10,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY frontend ./frontend
+COPY BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json ./
 
 EXPOSE 8000
 

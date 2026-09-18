@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 from importlib import import_module
 from collections.abc import Sequence
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from app.response import build_response
 from app.validator import ReplayValidationError, validate_response
 
@@ -23,6 +25,9 @@ from app.schemas import (
 
 app = FastAPI(title="GridWise LLM", version="0.1.0")
 REQUEST_TIMEOUT_SECONDS = 27.0
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
+app.mount("/assets", StaticFiles(directory=FRONTEND_DIR), name="assets")
 
 
 def _component(module: str, name: str):
@@ -98,6 +103,16 @@ async def unexpected_error_handler(_request: Request, _exc: Exception) -> JSONRe
 @app.get("/health", response_model=HealthResponse)
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/", include_in_schema=False)
+async def judge_ui() -> FileResponse:
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/sample-cases", include_in_schema=False)
+async def sample_cases() -> FileResponse:
+    return FileResponse(PROJECT_ROOT / "BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json")
 
 
 @app.post("/optimize-energy", response_model=OptimizeResponse)

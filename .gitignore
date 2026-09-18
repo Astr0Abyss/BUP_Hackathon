@@ -18,6 +18,7 @@ venv/
 # Editors and operating systems
 .idea/
 .vscode/
+.vercel/
 .DS_Store
 Thumbs.db
 
@@ -25,4 +26,3 @@ Thumbs.db
 tmp/
 dist/
 build/
-

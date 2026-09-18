@@ -114,11 +114,16 @@ docker run --rm -p 8000:8000 -e PORT=8000 --env-file .env gridwise:test
 
 Credentials are supplied at runtime and are never copied into the image. The image has been build-verified, including exact `/health` behavior and a real 24-hour `/optimize-energy` response.
 
-## Intended deployment: Railway
+## Production deployment
 
-Create a Railway service from the final private repository, select the Dockerfile build, and configure the required environment variables in Railway. Railway should expose the application port supplied through `PORT`. Verify `/health`, one real `/optimize-energy` request and all ten public cases from outside the development network before submitting the public base URL.
+Production UI:
+https://gridwise-llm-henna.vercel.app/
 
-No public deployment URL has been configured yet.
+Health:
+GET https://gridwise-llm-henna.vercel.app/health
+
+Optimization:
+POST https://gridwise-llm-henna.vercel.app/optimize-energy
 
 ## Provider and optimizer
 
@@ -128,8 +133,7 @@ The optimizer uses PuLP and its bundled CBC solver over the 24-hour continuous l
 
 ## Known limitations
 
-- No public deployment URL or external production latency measurement exists yet.
-- The latest local Docker run passed 10/10 official public cases; observed latency was p50 4.603 seconds and p95 10.008 seconds, which is not a production guarantee.
+- The production deployment passed 10/10 official public cases; observed latency was p50 8.115 seconds and p95 11.141 seconds.
 - Hosted model availability depends on runtime credentials, quota and provider health.
 
 ## Security and credits

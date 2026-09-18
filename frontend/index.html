@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="GridWise LLM energy optimization judge console">
+    <title>GridWise Judge Console</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">BUP CSE FEST 2026 · GRIDWISE LLM</p>
+        <h1>Energy Dispatch Console</h1>
+      </div>
+      <div class="api-status" aria-live="polite">
+        <span id="api-dot" class="status-dot pending" aria-hidden="true"></span>
+        <span>API</span>
+        <strong id="api-status">checking</strong>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="control-panel" aria-labelledby="request-heading">
+        <div class="section-heading">
+          <div>
+            <p class="step">01 / REQUEST</p>
+            <h2 id="request-heading">Scenario input</h2>
+          </div>
+          <label class="sample-control">
+            <span>Public sample</span>
+            <select id="sample-select" disabled>
+              <option>Loading cases…</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="editor-label" for="request-json">Editable request JSON</label>
+        <textarea id="request-json" spellcheck="false" aria-describedby="editor-help"></textarea>
+        <p id="editor-help" class="hint">Choose a sample, edit any field, then run the frozen optimization pipeline.</p>
+
+        <div class="run-row">
+          <button id="run-button" type="button" disabled>
+            <span>Run optimization</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <div class="request-stats" aria-live="polite">
+            <span>HTTP <strong id="http-status">—</strong></span>
+            <span>Latency <strong id="latency">—</strong></span>
+          </div>
+        </div>
+        <p id="request-message" class="request-message" role="alert"></p>
+      </section>
+
+      <section class="results" aria-labelledby="results-heading">
+        <div class="section-heading results-heading">
+          <div>
+            <p class="step">02 / RESULT</p>
+            <h2 id="results-heading">Validated dispatch</h2>
+          </div>
+          <span id="scenario-id" class="scenario-pill">Awaiting run</span>
+        </div>
+
+        <div class="metric-grid" aria-label="Optimization totals">
+          <article class="metric"><span>Total grid</span><strong id="total-grid">—</strong><small>kWh</small></article>
+          <article class="metric accent"><span>Total cost</span><strong id="total-cost">—</strong><small>BDT</small></article>
+          <article class="metric"><span>Peak grid</span><strong id="peak-grid">—</strong><small>kWh</small></article>
+        </div>
+
+        <div class="content-block">
+          <div class="block-title">
+            <h3>Directive interpretation</h3>
+            <span id="directive-count">0 notes</span>
+          </div>
+          <div id="directives" class="directive-grid">
+            <p class="empty-state">Run a scenario to inspect interpreted operator notes.</p>
+          </div>
+        </div>
+
+        <div class="content-block plan-block">
+          <div class="block-title">
+            <h3>24-hour plan</h3>
+            <span>kWh by hour</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Hour</th><th>Grid</th><th>Solar used</th><th>Battery action</th><th>Battery</th><th>Energy after</th></tr></thead>
+              <tbody id="plan-body"><tr><td colspan="6" class="empty-cell">No plan returned yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <details class="raw-panel">
+          <summary>Raw JSON response <span>expand</span></summary>
+          <pre id="raw-json">No response yet.</pre>
+        </details>
+      </section>
+    </main>
+
+    <footer><span>GRIDWISE / JUDGE VIEW</span><span>24 HOUR ENERGY CONTROL</span></footer>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>
